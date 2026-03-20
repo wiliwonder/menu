@@ -546,9 +546,22 @@ function loadImg(i, input) {
       alert('图片读取失败，请重试');
       return;
     }
-    st.mains[i].img = dataUrl;
-    renderMains();
-    syncCard();
+
+    const img = new Image();
+    img.onload = () => {
+      if (!img.naturalWidth || !img.naturalHeight) {
+        alert('图片尺寸异常，请换一张图片');
+        return;
+      }
+      console.log('图片加载成功:', img.naturalWidth, 'x', img.naturalHeight);
+      st.mains[i].img = dataUrl;
+      renderMains();
+      syncCard();
+    };
+    img.onerror = () => {
+      alert('图片加载失败，请换一张图片');
+    };
+    img.src = dataUrl;
   };
 
   reader.onerror = () => {
@@ -618,7 +631,7 @@ function syncCard() {
   syncCardTitle();
   document.getElementById('cardMain').innerHTML = st.mains.map(m=>`
     <div class="dish-name">${escH(m.name||'\u3000')}</div>
-    ${(m.img && m.img.length > 10)?`<img class="dish-img" src="${m.img}" alt="">`:''}`).join('');
+    ${(m.img && m.img.length > 100)?`<img class="dish-img" src="${m.img}" alt="">`:''}`).join('');
   document.getElementById('cardSides').innerHTML = st.sides
     .filter(s=>s.trim())
     .map(s=>`<span class="side-item"><span class="side-dot"></span>${escH(s)}</span>`).join('');
@@ -667,38 +680,65 @@ async function exportCard() {
 
   try {
     const card = document.getElementById('card');
-    console.log('1. card element:', card);
 
-    const imgs = card.querySelectorAll('img');
-    console.log('2. imgs count:', imgs.length);
-    if (imgs.length > 0) {
-      console.log('3. first img src:', imgs[0].src);
-      console.log('4. first img complete:', imgs[0].complete);
-      console.log('5. first img naturalWidth:', imgs[0].naturalWidth);
+    if (!card) {
+      alert('找不到卡片元素，请刷新页面重试');
+      btn.textContent = '📥 导出菜单图片';
+      btn.disabled = false;
+      return;
     }
-
-    await Promise.all([...imgs].filter(img => img.src).map(img => {
-      return new Promise(res => {
-        if (img.complete) return res();
-        img.onload = res;
-        img.onerror = res;
-        setTimeout(res, 2000);
-      });
-    }));
-
-    console.log('6. all images loaded');
-
-    const isMobile = window.innerWidth < 960 || /Mobi|Android/i.test(navigator.userAgent);
-    const scale = isMobile ? 1.8 : 2.5;
 
     const rect = card.getBoundingClientRect();
     const cardW = Math.round(rect.width);
     const cardH = Math.round(rect.height);
-    console.log('7. card size:', cardW, 'x', cardH);
 
-    if (!cardW || !cardH) throw new Error('卡片尺寸为0，请滚动到卡片可见区域后再导出');
+    if (!cardW || !cardH || cardW < 100 || cardH < 100) {
+      alert('卡片尺寸异常：' + cardW + ' x ' + cardH + '\n请确保卡片在屏幕内且完全可见');
+      btn.textContent = '📥 导出菜单图片';
+      btn.disabled = false;
+      return;
+    }
 
-    console.log('8. starting html2canvas with useCORS: false');
+    const imgs = card.querySelectorAll('img');
+    console.log('找到图片数量:', imgs.length);
+
+    let imgErrors = [];
+    imgs.forEach((img, index) => {
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      console.log('图片' + index + ':', w, 'x', h, 'complete:', img.complete);
+
+      if (!w || !h || w === 0 || h === 0) {
+        imgErrors.push('图片' + (index + 1) + '尺寸为0');
+      }
+    });
+
+    if (imgErrors.length > 0) {
+      alert('发现无效图片：\n' + imgErrors.join('\n') + '\n请重新上传图片');
+      btn.textContent = '📥 导出菜单图片';
+      btn.disabled = false;
+      return;
+    }
+
+    await Promise.all([...imgs].filter(img => img.src).map(img => {
+      return new Promise(res => {
+        if (img.complete && img.naturalWidth > 0) return res();
+        let loaded = false;
+        img.onload = () => { loaded = true; res(); };
+        img.onerror = () => { console.warn('图片加载失败'); res(); };
+        setTimeout(() => {
+          if (!loaded) console.warn('图片加载超时');
+          res();
+        }, 3000);
+      });
+    }));
+
+    console.log('所有图片已加载完成');
+
+    const isMobile = window.innerWidth < 960 || /Mobi|Android/i.test(navigator.userAgent);
+    const scale = isMobile ? 1.8 : 2.5;
+
+    console.log('开始 html2canvas，尺寸:', cardW, 'x', cardH, '缩放:', scale);
 
     const canvas = await html2canvas(card, {
       scale,
@@ -707,26 +747,37 @@ async function exportCard() {
       useCORS: false,
       allowTaint: true,
       backgroundColor: '#f8f4eb',
-      logging: true,
+      logging: false,
       imageTimeout: 8000,
-      removeContainer: true,
-      onclone: (doc) => {
-        console.log('9. onclone triggered');
+      onclone: (clonedDoc) => {
+        console.log('克隆文档完成');
 
-        const wm = doc.getElementById('wmLayer');
+        const wm = clonedDoc.getElementById('wmLayer');
         if (wm) wm.style.display = st.watermark ? '' : 'none';
 
-        const svgs = doc.querySelectorAll('svg');
+        const clonedCard = clonedDoc.getElementById('card');
+        if (clonedCard) {
+          clonedCard.style.background = 'none';
+        }
+
+        const cardBg = clonedDoc.querySelector('.card-bg');
+        if (cardBg) {
+          cardBg.style.background = 'none';
+        }
+
+        const svgs = clonedDoc.querySelectorAll('svg');
         svgs.forEach(svg => {
-          if (!svg.getAttribute('width') || !svg.getAttribute('height')) {
+          if (!svg.getAttribute('width') || svg.getAttribute('width') === '0') {
             svg.setAttribute('width', '100');
+          }
+          if (!svg.getAttribute('height') || svg.getAttribute('height') === '0') {
             svg.setAttribute('height', '100');
           }
         });
       }
     });
 
-    console.log('10. canvas created:', canvas.width, 'x', canvas.height);
+    console.log('Canvas 创建完成:', canvas.width, 'x', canvas.height);
 
     const d = new Date();
     const filename = `${st.day}营养搭配_${d.getMonth()+1}月${d.getDate()}日.png`;
@@ -738,12 +789,16 @@ async function exportCard() {
       a.click();
     } catch {
       const win = window.open();
-      win.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%"><p style="font-family:sans-serif;color:#666;text-align:center">长按图片 → 存储到相册</p>`);
+      if (win) {
+        win.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%"><p style="font-family:sans-serif;color:#666;text-align:center">长按图片 → 存储到相册</p>`);
+      } else {
+        alert('无法打开新窗口，请检查浏览器弹窗设置');
+      }
     }
 
   } catch(e) {
-    console.error('11. export error:', e);
-    alert('导出失败：' + (e.message || '未知错误') + '\n\n请尝试：截图保存，或换用电脑浏览器导出。');
+    console.error('导出错误:', e);
+    alert('导出失败：' + (e.message || '未知错误') + '\n\n建议：\n1. 清除现有图片后重新上传\n2. 使用截图功能保存\n3. 换用电脑浏览器');
   }
 
   btn.textContent = '📥 导出菜单图片';
