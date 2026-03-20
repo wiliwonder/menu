@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>玫小瑰 · 今日菜单</title>
 <!-- Fonts via multiple CDN fallbacks for China accessibility -->
-<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.1.3/dom-to-image-more.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -194,7 +193,10 @@ body {
 }
 .card-bg {
   position: absolute; inset: 0;
-  background: linear-gradient(165deg, #f9f6ef 0%, #f3efe3 100%);
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 8%,  rgba(159,202,169,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 88% 92%, rgba(159,202,169,0.14) 0%, transparent 55%),
+    linear-gradient(165deg, #f9f6ef 0%, #f3efe3 100%);
   pointer-events: none;
 }
 .card-frame {
@@ -403,7 +405,7 @@ body {
       <div class="card-bg"></div>
       <div class="card-frame"></div>
       <div class="card-wm-layer" id="wmLayer"></div>
-      <svg class="botanical-tl" width="170" height="160" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg class="botanical-tl" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8,152 Q42,95 100,28" stroke="#4a7c59" stroke-width="1.4" fill="none" stroke-linecap="round"/>
         <path d="M22,138 Q52,95 82,55" stroke="#6fa87d" stroke-width="0.9" fill="none" stroke-linecap="round"/>
         <ellipse cx="96" cy="34" rx="14" ry="7.5" fill="#9fcaa9" transform="rotate(-45 96 34)"/>
@@ -416,7 +418,7 @@ body {
         <circle cx="86" cy="44" r="2.2" fill="#9fcaa9" opacity="0.6"/>
         <circle cx="10" cy="148" r="2" fill="#9fcaa9" opacity="0.5"/>
       </svg>
-      <svg class="botanical-br" width="155" height="148" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg class="botanical-br" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8,152 Q42,95 100,28" stroke="#4a7c59" stroke-width="1.4" fill="none" stroke-linecap="round"/>
         <path d="M22,138 Q52,95 82,55" stroke="#6fa87d" stroke-width="0.9" fill="none" stroke-linecap="round"/>
         <ellipse cx="96" cy="34" rx="14" ry="7.5" fill="#9fcaa9" transform="rotate(-45 96 34)"/>
@@ -535,40 +537,22 @@ function removeMain(i) { st.mains.splice(i,1); renderMains(); syncCard(); }
 function triggerImg(i) { document.getElementById('fi'+i).click(); }
 function clearImg(i) { st.mains[i].img=null; renderMains(); syncCard(); }
 function loadImg(i, input) {
-  const f = input.files[0];
-  if (!f) return;
-
-  const reader = new FileReader();
-
-  reader.onload = (e) => {
-    const dataUrl = e.target.result;
-    if (!dataUrl || dataUrl.length < 100) {
-      alert('图片读取失败，请重试');
-      return;
-    }
-
-    const img = new Image();
-    img.onload = () => {
-      if (!img.naturalWidth || !img.naturalHeight) {
-        alert('图片尺寸异常，请换一张图片');
-        return;
-      }
-      console.log('图片加载成功:', img.naturalWidth, 'x', img.naturalHeight);
-      st.mains[i].img = dataUrl;
-      renderMains();
-      syncCard();
-    };
-    img.onerror = () => {
-      alert('图片加载失败，请换一张图片');
-    };
-    img.src = dataUrl;
+  const f=input.files[0]; if(!f) return;
+  // Resize image before storing to avoid canvas memory issues on mobile
+  const img = new Image();
+  const url = URL.createObjectURL(f);
+  img.onload = () => {
+    const maxW = 900;
+    let w = img.width, h = img.height;
+    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    st.mains[i].img = c.toDataURL('image/jpeg', 0.88);
+    URL.revokeObjectURL(url);
+    renderMains(); syncCard();
   };
-
-  reader.onerror = () => {
-    alert('图片读取失败');
-  };
-
-  reader.readAsDataURL(f);
+  img.src = url;
 }
 
 function renderSides() {
@@ -631,7 +615,7 @@ function syncCard() {
   syncCardTitle();
   document.getElementById('cardMain').innerHTML = st.mains.map(m=>`
     <div class="dish-name">${escH(m.name||'\u3000')}</div>
-    ${(m.img && m.img.length > 100)?`<img class="dish-img" src="${m.img}" alt="">`:''}`).join('');
+    ${m.img?`<img class="dish-img" src="${m.img}" alt="">`:''}`).join('');
   document.getElementById('cardSides').innerHTML = st.sides
     .filter(s=>s.trim())
     .map(s=>`<span class="side-item"><span class="side-dot"></span>${escH(s)}</span>`).join('');
@@ -668,146 +652,29 @@ function addPreset(cat) {
 }
 function rmPreset(cat,i) { presets[cat].splice(i,1); savePresets(); renderModal(); }
 
+// ── EXPORT: mobile-safe ──────────────────────────────────
 async function exportCard() {
   const btn = document.getElementById('exportBtn');
-  btn.textContent = '生成中…';
-  btn.disabled = true;
+  btn.textContent = '生成中…'; btn.disabled = true;
 
-  await Promise.race([
-    document.fonts.ready,
-    new Promise(r => setTimeout(r, 2000))
-  ]);
+  await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2000))]);
 
   try {
     const card = document.getElementById('card');
-
-    if (!card) {
-      alert('找不到卡片元素，请刷新页面重试');
-      btn.textContent = '📥 导出菜单图片';
-      btn.disabled = false;
-      return;
-    }
-
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const scale = isMobile ? 1.8 : 2.5;
     const rect = card.getBoundingClientRect();
-    const cardW = Math.round(rect.width);
-    const cardH = Math.round(rect.height);
 
-    if (!cardW || !cardH || cardW < 100 || cardH < 100) {
-      alert('卡片尺寸异常：' + cardW + ' x ' + cardH + '\n请确保卡片在屏幕内且完全可见');
-      btn.textContent = '📥 导出菜单图片';
-      btn.disabled = false;
-      return;
-    }
-
-    const imgs = card.querySelectorAll('img');
-    console.log('找到图片数量:', imgs.length);
-
-    let imgErrors = [];
-    imgs.forEach((img, index) => {
-      const w = img.naturalWidth || img.width;
-      const h = img.naturalHeight || img.height;
-      console.log('图片' + index + ':', w, 'x', h, 'complete:', img.complete);
-
-      if (!w || !h || w === 0 || h === 0) {
-        imgErrors.push('图片' + (index + 1) + '尺寸为0');
-      }
+    const dataUrl = await domtoimage.toPng(card, {
+      width:  rect.width  * scale,
+      height: rect.height * scale,
+      style: {
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+      },
+      bgcolor: '#f8f4eb',
+      cacheBust: true,
     });
-
-    if (imgErrors.length > 0) {
-      alert('发现无效图片：\n' + imgErrors.join('\n') + '\n请重新上传图片');
-      btn.textContent = '📥 导出菜单图片';
-      btn.disabled = false;
-      return;
-    }
-
-    await Promise.all([...imgs].filter(img => img.src).map(img => {
-      return new Promise(res => {
-        if (img.complete && img.naturalWidth > 0) return res();
-        let loaded = false;
-        img.onload = () => { loaded = true; res(); };
-        img.onerror = () => { console.warn('图片加载失败'); res(); };
-        setTimeout(() => {
-          if (!loaded) console.warn('图片加载超时');
-          res();
-        }, 3000);
-      });
-    }));
-
-    console.log('所有图片已加载完成');
-
-    const cardBg = document.querySelector('.card-bg');
-    const oldBg = cardBg ? cardBg.style.background : '';
-
-    try {
-      if (cardBg) {
-        cardBg.style.background = 'none';
-        console.log('临时移除背景渐变，测试是否兼容问题');
-      }
-
-      const isMobile = window.innerWidth < 960 || /Mobi|Android/i.test(navigator.userAgent);
-      const scale = isMobile ? 1.8 : 2.5;
-
-      console.log('开始 html2canvas，尺寸:', cardW, 'x', cardH, '缩放:', scale);
-
-      const canvas = await html2canvas(card, {
-        scale,
-        width: cardW,
-        height: cardH,
-        useCORS: false,
-        allowTaint: true,
-        backgroundColor: '#f8f4eb',
-        logging: false,
-        imageTimeout: 8000,
-        onclone: (clonedDoc) => {
-          console.log('克隆文档完成');
-
-          const wm = clonedDoc.getElementById('wmLayer');
-          if (wm) wm.style.display = st.watermark ? '' : 'none';
-
-          const clonedCardBg = clonedDoc.querySelector('.card-bg');
-          if (clonedCardBg) {
-            clonedCardBg.style.background = 'none';
-          }
-
-          const svgs = clonedDoc.querySelectorAll('svg');
-          svgs.forEach(svg => {
-            if (!svg.getAttribute('width') || svg.getAttribute('width') === '0') {
-              svg.setAttribute('width', '100');
-            }
-            if (!svg.getAttribute('height') || svg.getAttribute('height') === '0') {
-              svg.setAttribute('height', '100');
-            }
-          });
-        }
-      });
-
-      console.log('Canvas 创建完成:', canvas.width, 'x', canvas.height);
-
-      const d = new Date();
-      const filename = `${st.day}营养搭配_${d.getMonth()+1}月${d.getDate()}日.png`;
-
-      try {
-        const a = document.createElement('a');
-        a.download = filename;
-        a.href = canvas.toDataURL('image/png');
-        a.click();
-      } catch {
-        const win = window.open();
-        if (win) {
-          win.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%"><p style="font-family:sans-serif;color:#666;text-align:center">长按图片 → 存储到相册</p>`);
-        } else {
-          alert('无法打开新窗口，请检查浏览器弹窗设置');
-        }
-      }
-
-    } finally {
-      if (cardBg) {
-        cardBg.style.background = oldBg;
-        console.log('恢复背景渐变');
-      }
-    }
-
-    console.log('Canvas 创建完成:', canvas.width, 'x', canvas.height);
 
     const d = new Date();
     const filename = `${st.day}营养搭配_${d.getMonth()+1}月${d.getDate()}日.png`;
@@ -815,24 +682,21 @@ async function exportCard() {
     try {
       const a = document.createElement('a');
       a.download = filename;
-      a.href = canvas.toDataURL('image/png');
+      a.href = dataUrl;
       a.click();
     } catch {
+      // iOS Safari fallback
       const win = window.open();
-      if (win) {
-        win.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%"><p style="font-family:sans-serif;color:#666;text-align:center">长按图片 → 存储到相册</p>`);
-      } else {
-        alert('无法打开新窗口，请检查浏览器弹窗设置');
-      }
+      win.document.write(`<img src="${dataUrl}" style="max-width:100%">
+        <p style="font-family:sans-serif;color:#666;text-align:center;padding:12px">长按图片 → 存储到相册</p>`);
     }
 
   } catch(e) {
-    console.error('导出错误:', e);
-    alert('导出失败：' + (e.message || '未知错误') + '\n\n建议：\n1. 清除现有图片后重新上传\n2. 使用截图功能保存\n3. 换用电脑浏览器');
+    console.error(e);
+    alert('导出失败：' + (e.message || '未知错误'));
   }
 
-  btn.textContent = '📥 导出菜单图片';
-  btn.disabled = false;
+  btn.textContent = '📥 导出菜单图片'; btn.disabled = false;
 }
 
 function escH(s) {
