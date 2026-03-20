@@ -538,21 +538,52 @@ function removeMain(i) { st.mains.splice(i,1); renderMains(); syncCard(); }
 function triggerImg(i) { document.getElementById('fi'+i).click(); }
 function clearImg(i) { st.mains[i].img=null; renderMains(); syncCard(); }
 function loadImg(i, input) {
-  const f=input.files[0]; if(!f) return;
-  // Resize image before storing to avoid canvas memory issues on mobile
+  const f = input.files[0];
+  if (!f) return;
+
   const img = new Image();
   const url = URL.createObjectURL(f);
+
   img.onload = () => {
+    let w = img.naturalWidth;
+    let h = img.naturalHeight;
+
+    if (!w || !h) {
+      alert('图片解析失败，请换一张图片');
+      URL.revokeObjectURL(url);
+      return;
+    }
+
     const maxW = 900;
-    let w = img.width, h = img.height;
-    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+    if (w > maxW) {
+      h = Math.round(h * maxW / w);
+      w = maxW;
+    }
+
+    if (!w || !h) {
+      alert('图片尺寸异常');
+      return;
+    }
+
     const c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    c.width = w;
+    c.height = h;
+
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+
     st.mains[i].img = c.toDataURL('image/jpeg', 0.88);
+
     URL.revokeObjectURL(url);
-    renderMains(); syncCard();
+    renderMains();
+    syncCard();
   };
+
+  img.onerror = () => {
+    alert('图片加载失败');
+    URL.revokeObjectURL(url);
+  };
+
   img.src = url;
 }
 
@@ -656,9 +687,9 @@ function rmPreset(cat,i) { presets[cat].splice(i,1); savePresets(); renderModal(
 // ── EXPORT: mobile-safe ──────────────────────────────────
 async function exportCard() {
   const btn = document.getElementById('exportBtn');
-  btn.textContent = '生成中…'; btn.disabled = true;
+  btn.textContent = '生成中…';
+  btn.disabled = true;
 
-  // Wait for fonts (with timeout so it doesn't hang if fonts fail)
   await Promise.race([
     document.fonts.ready,
     new Promise(r => setTimeout(r, 2000))
@@ -666,10 +697,23 @@ async function exportCard() {
 
   try {
     const card = document.getElementById('card');
+
+    const imgs = card.querySelectorAll('img');
+    await Promise.all([...imgs].map(img => {
+      return new Promise(res => {
+        if (img.complete && img.naturalWidth > 0) return res();
+
+        img.onload = () => res();
+        img.onerror = () => {
+          img.remove();
+          res();
+        };
+      });
+    }));
+
     const isMobile = window.innerWidth < 960 || /Mobi|Android/i.test(navigator.userAgent);
     const scale = isMobile ? 1.8 : 2.5;
 
-    // Measure actual rendered size — fixes "canvas width/height 0" on mobile
     const rect = card.getBoundingClientRect();
     const cardW = Math.round(rect.width);
     const cardH = Math.round(rect.height);
@@ -679,12 +723,22 @@ async function exportCard() {
       scale,
       width: cardW,
       height: cardH,
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#f8f4eb',
       logging: false,
-      imageTimeout: 8000,
+      imageTimeout: 10000,
+      foreignObjectRendering: false,
       onclone: (doc) => {
+        const imgs = doc.querySelectorAll('img');
+        imgs.forEach(img => {
+          if (!img.src || img.naturalWidth === 0) {
+            img.remove();
+          }
+        });
+
         const wm = doc.getElementById('wmLayer');
         if (wm) wm.style.display = st.watermark ? '' : 'none';
       }
@@ -693,14 +747,12 @@ async function exportCard() {
     const d = new Date();
     const filename = `${st.day}营养搭配_${d.getMonth()+1}月${d.getDate()}日.png`;
 
-    // Try standard download first; fall back to opening in new tab (iOS)
     try {
       const a = document.createElement('a');
       a.download = filename;
       a.href = canvas.toDataURL('image/png');
       a.click();
     } catch {
-      // iOS Safari fallback: open image in new tab for long-press save
       const win = window.open();
       win.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%"><p style="font-family:sans-serif;color:#666;text-align:center">长按图片 → 存储到相册</p>`);
     }
@@ -710,7 +762,8 @@ async function exportCard() {
     alert('导出失败：' + (e.message || '未知错误') + '\n\n请尝试：截图保存，或换用电脑浏览器导出。');
   }
 
-  btn.textContent = '📥 导出菜单图片'; btn.disabled = false;
+  btn.textContent = '📥 导出菜单图片';
+  btn.disabled = false;
 }
 
 function escH(s) {
