@@ -4,14 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>玫小瑰 · 今日菜单</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fonts via multiple CDN fallbacks for China accessibility -->
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Font stack: Noto if loaded, then system CJK fonts as solid fallback */
 :root {
+  --font-serif: 'Noto Serif SC', 'Songti SC', 'SimSun', 'STSong', serif;
+  --font-sans:  'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
   --sage:       #4a7c59;
   --sage-mid:   #6fa87d;
   --sage-light: #9fcaa9;
@@ -26,7 +29,7 @@
 }
 
 body {
-  font-family: 'Noto Sans SC', sans-serif;
+  font-family: var(--font-sans);
   background: var(--ui-bg);
   color: var(--text-dark);
   min-height: 100vh;
@@ -40,7 +43,7 @@ body {
 }
 .header-icon { font-size: 20px; }
 .app-header h1 {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 17px; font-weight: 500;
   color: var(--sage); letter-spacing: 0.06em;
 }
@@ -52,7 +55,6 @@ body {
   align-items: flex-start;
 }
 
-/* ─── FORM PANEL ─── */
 .form-panel { flex: 1; min-width: 280px; max-width: 400px; }
 
 .form-section {
@@ -75,7 +77,7 @@ body {
   padding: 5px 11px; border-radius: 20px;
   border: 1px solid var(--ui-border); background: white;
   color: var(--text-mid); font-size: 13px;
-  font-family: 'Noto Sans SC', sans-serif;
+  font-family: var(--font-sans);
   cursor: pointer; transition: all 0.18s;
 }
 .day-btn:hover { border-color: var(--sage-mid); color: var(--sage); }
@@ -87,7 +89,7 @@ body {
 .item-input {
   width: 100%; padding: 8px 11px;
   border: 1px solid var(--ui-border); border-radius: 8px;
-  font-size: 14px; font-family: 'Noto Sans SC', sans-serif;
+  font-size: 14px; font-family: var(--font-sans);
   color: var(--text-dark); background: white;
   outline: none; transition: border-color 0.18s;
 }
@@ -96,7 +98,7 @@ body {
 .preset-select {
   padding: 7px 8px; border: 1px solid var(--ui-border);
   border-radius: 8px; font-size: 12px;
-  font-family: 'Noto Sans SC', sans-serif;
+  font-family: var(--font-sans);
   color: var(--text-mid); background: white;
   outline: none; cursor: pointer; width: 100px; flex-shrink: 0;
 }
@@ -129,7 +131,7 @@ body {
   width: 100%; padding: 7px;
   border: 1.5px dashed var(--sage-pale); border-radius: 8px;
   background: none; color: var(--sage);
-  font-size: 13px; font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px; font-family: var(--font-sans);
   cursor: pointer; transition: all 0.18s; margin-top: 8px;
 }
 .add-item-btn:hover { border-color: var(--sage-mid); background: rgba(74,124,89,0.04); }
@@ -156,7 +158,7 @@ body {
 .manage-btn {
   width: 100%; padding: 8px; background: none;
   border: 1px solid var(--ui-border); border-radius: 8px;
-  font-size: 13px; font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px; font-family: var(--font-sans);
   color: var(--text-mid); cursor: pointer; margin-top: 12px; transition: all 0.18s;
 }
 .manage-btn:hover { border-color: var(--sage-mid); color: var(--sage); }
@@ -164,14 +166,14 @@ body {
 .export-btn {
   width: 100%; padding: 14px; background: var(--sage); color: white;
   border: none; border-radius: 10px; font-size: 15px;
-  font-family: 'Noto Sans SC', sans-serif; font-weight: 500;
+  font-family: var(--font-sans); font-weight: 500;
   cursor: pointer; transition: all 0.2s; letter-spacing: 0.06em; margin-top: 4px;
 }
 .export-btn:hover { background: #3d6a4a; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(74,124,89,0.3); }
 .export-btn:active { transform: none; box-shadow: none; }
 .export-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-/* ─── PREVIEW ─── */
+/* ── PREVIEW ── */
 .preview-panel {
   flex-shrink: 0; display: flex; flex-direction: column;
   align-items: center; gap: 10px; position: sticky; top: 28px;
@@ -181,19 +183,15 @@ body {
   letter-spacing: 0.08em; text-transform: uppercase;
 }
 
-/* ═══════════════════════════════════
-   CARD — height auto, width fixed
-═══════════════════════════════════ */
+/* ══ CARD ══ */
 #card {
   width: 480px;
-  position: relative;
-  overflow: hidden;
-  font-family: 'Noto Serif SC', serif;
+  position: relative; overflow: hidden;
+  font-family: var(--font-serif);
   box-shadow: 0 8px 48px rgba(0,0,0,0.14);
   border-radius: 3px;
   background: #f8f4eb;
 }
-
 .card-bg {
   position: absolute; inset: 0;
   background:
@@ -206,24 +204,20 @@ body {
   position: absolute; inset: 12px;
   border: 0.8px solid rgba(74,124,89,0.22);
   pointer-events: none; z-index: 1;
-  /* Frame must stretch with card — keep it */
 }
-
-/* ── Diagonal tiled watermark ── */
 .card-wm-layer {
   position: absolute; inset: 0;
   pointer-events: none; z-index: 3; overflow: hidden;
 }
 .card-wm-layer span {
   position: absolute;
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 13px; font-weight: 400;
   color: rgba(74,124,89,0.055);
   white-space: nowrap;
   transform: rotate(-28deg);
   user-select: none; letter-spacing: 0.14em;
 }
-
 .botanical-tl {
   position: absolute; top: 0; left: 0;
   width: 170px; height: 160px; opacity: 0.5; pointer-events: none;
@@ -233,16 +227,13 @@ body {
   width: 155px; height: 148px; opacity: 0.42;
   pointer-events: none; transform: rotate(180deg);
 }
-
 .card-content {
   position: relative; z-index: 2;
   padding: 42px 52px 36px;
 }
-
-/* Header */
 .card-header { text-align: center; margin-bottom: 20px; padding-top: 4px; }
 .card-sub {
-  font-family: 'Noto Sans SC', sans-serif;
+  font-family: var(--font-sans);
   font-size: 9px; font-weight: 300;
   color: var(--sage-mid); letter-spacing: 0.24em;
   margin-bottom: 5px; text-transform: uppercase;
@@ -264,35 +255,26 @@ body {
   width: 5px; height: 5px; background: var(--sage-mid);
   transform: rotate(45deg); border-radius: 1px;
 }
-
 .card-section { margin-bottom: 16px; }
 .section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .section-label {
-  font-family: 'Noto Sans SC', sans-serif;
+  font-family: var(--font-sans);
   font-size: 9px; font-weight: 500; color: var(--sage);
   letter-spacing: 0.18em; flex-shrink: 0;
 }
 .section-rule { flex: 1; height: 0.6px; background: rgba(74,124,89,0.22); }
-
-/* Mains — centred */
 .main-dishes {
-  display: flex; flex-direction: column;
-  align-items: center; gap: 5px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
 }
 .dish-name {
   font-size: 18px; font-weight: 500;
   color: var(--text-dark); letter-spacing: 0.07em;
   line-height: 1.5; text-align: center;
 }
-/* Image: natural aspect ratio, full width */
 .dish-img {
-  width: 100%; height: auto;
-  display: block;
-  border-radius: 7px;
-  margin: 6px 0 3px;
-  object-fit: contain;
+  width: 100%; height: auto; display: block;
+  border-radius: 7px; margin: 6px 0 3px; object-fit: contain;
 }
-
 .sides-grid {
   display: flex; flex-wrap: wrap;
   gap: 5px 20px; justify-content: center;
@@ -312,22 +294,23 @@ body {
 }
 .card-foot { height: 14px; }
 
-/* ─── MODAL ─── */
+/* ── MODAL ── */
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(20,30,22,0.45);
   z-index: 200; display: flex;
   align-items: center; justify-content: center;
+  padding: 16px;
 }
 .modal-overlay.hidden { display: none; }
 .modal-box {
   background: white; border-radius: 16px;
-  padding: 28px 28px 20px; width: 480px;
-  max-height: 78vh; overflow-y: auto;
+  padding: 28px 28px 20px; width: 100%; max-width: 480px;
+  max-height: 80vh; overflow-y: auto;
   box-shadow: 0 24px 64px rgba(0,0,0,0.2);
 }
 .modal-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   font-size: 17px; color: var(--text-dark); margin-bottom: 22px;
 }
 .modal-cat { margin-bottom: 22px; }
@@ -340,7 +323,7 @@ body {
   display: inline-flex; align-items: center; gap: 3px;
   background: var(--sage-pale); color: var(--sage);
   padding: 4px 10px; border-radius: 20px;
-  font-size: 13px; font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px; font-family: var(--font-sans);
 }
 .ptag-x {
   background: none; border: none; color: var(--sage-mid);
@@ -351,19 +334,19 @@ body {
 .preset-add-input {
   flex: 1; padding: 7px 11px;
   border: 1px solid var(--ui-border); border-radius: 8px;
-  font-size: 14px; font-family: 'Noto Sans SC', sans-serif; outline: none;
+  font-size: 14px; font-family: var(--font-sans); outline: none;
 }
 .preset-add-input:focus { border-color: var(--sage-mid); }
 .preset-add-btn {
   padding: 7px 15px; background: var(--sage); color: white;
   border: none; border-radius: 8px;
-  font-size: 13px; font-family: 'Noto Sans SC', sans-serif; cursor: pointer;
+  font-size: 13px; font-family: var(--font-sans); cursor: pointer;
 }
 .preset-add-btn:hover { background: #3d6a4a; }
 .modal-done {
   width: 100%; padding: 10px; background: none;
   border: 1px solid var(--ui-border); border-radius: 8px;
-  font-size: 14px; font-family: 'Noto Sans SC', sans-serif;
+  font-size: 14px; font-family: var(--font-sans);
   cursor: pointer; margin-top: 6px; color: var(--text-mid);
 }
 .modal-done:hover { border-color: var(--sage); color: var(--sage); }
@@ -371,8 +354,8 @@ body {
 @media (max-width: 960px) {
   .app-body { flex-direction: column; align-items: center; padding: 16px; }
   .form-panel { max-width: 480px; width: 100%; }
-  .preview-panel { position: static; }
-  #card { width: 340px; }
+  .preview-panel { position: static; width: 100%; }
+  #card { width: 100%; max-width: 420px; }
   .card-content { padding: 30px 36px 24px; }
   .card-title { font-size: 22px; }
   .dish-name { font-size: 15px; }
@@ -387,32 +370,25 @@ body {
 </header>
 
 <div class="app-body">
-
-  <!-- ═══ FORM ═══ -->
   <div class="form-panel">
-
     <div class="form-section">
       <div class="form-section-title">日期</div>
       <div class="day-selector" id="daySelector"></div>
     </div>
-
     <div class="form-section">
       <div class="form-section-title">主食（最多 2 项）</div>
       <div class="item-list" id="mainList"></div>
       <button class="add-item-btn" id="addMainBtn" onclick="addMain()">＋ 添加主食</button>
     </div>
-
     <div class="form-section">
       <div class="form-section-title">搭配（2 ~ 5 项）</div>
       <div class="item-list" id="sideList"></div>
       <button class="add-item-btn" id="addSideBtn" onclick="addSide()">＋ 添加搭配</button>
     </div>
-
     <div class="form-section">
       <div class="form-section-title">热饮</div>
       <div class="item-list" id="drinkList"></div>
     </div>
-
     <div class="form-section">
       <div class="form-section-title">选项</div>
       <div class="toggle-row">
@@ -421,19 +397,15 @@ body {
       </div>
       <button class="manage-btn" onclick="openModal()">⚙ 管理预设菜品库</button>
     </div>
-
     <button class="export-btn" id="exportBtn" onclick="exportCard()">📥 导出菜单图片</button>
-
   </div>
 
-  <!-- ═══ CARD ═══ -->
   <div class="preview-panel">
     <div class="preview-label">预览效果</div>
     <div id="card">
       <div class="card-bg"></div>
-      <div class="card-frame" id="cardFrame"></div>
+      <div class="card-frame"></div>
       <div class="card-wm-layer" id="wmLayer"></div>
-
       <svg class="botanical-tl" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8,152 Q42,95 100,28" stroke="#4a7c59" stroke-width="1.4" fill="none" stroke-linecap="round"/>
         <path d="M22,138 Q52,95 82,55" stroke="#6fa87d" stroke-width="0.9" fill="none" stroke-linecap="round"/>
@@ -458,7 +430,6 @@ body {
         <circle cx="103" cy="24" r="2.8" fill="#4a7c59" opacity="0.45"/>
         <circle cx="86" cy="44" r="2.2" fill="#9fcaa9" opacity="0.6"/>
       </svg>
-
       <div class="card-content">
         <div class="card-header">
           <div class="card-sub">NUTRITION · DAILY</div>
@@ -467,7 +438,6 @@ body {
             <div class="t-line"></div><div class="t-gem"></div><div class="t-line r"></div>
           </div>
         </div>
-
         <div class="card-section">
           <div class="section-head">
             <span class="section-label">主 食</span>
@@ -475,7 +445,6 @@ body {
           </div>
           <div class="main-dishes" id="cardMain"></div>
         </div>
-
         <div class="card-section">
           <div class="section-head">
             <span class="section-label">搭 配</span>
@@ -483,7 +452,6 @@ body {
           </div>
           <div class="sides-grid" id="cardSides"></div>
         </div>
-
         <div class="card-section">
           <div class="section-head">
             <span class="section-label">热 饮</span>
@@ -491,15 +459,12 @@ body {
           </div>
           <div class="drink-text" id="cardDrink"></div>
         </div>
-
         <div class="card-foot"></div>
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- ═══ MODAL ═══ -->
 <div class="modal-overlay hidden" id="modalOverlay" onclick="outsideClose(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-title">管理预设菜品库</div>
@@ -509,7 +474,6 @@ body {
 </div>
 
 <script>
-// ════════ STATE ════════
 const DAYS = ['周一','周二','周三','周四','周五','周六','周日'];
 const todayIdx = (new Date().getDay() + 6) % 7;
 
@@ -529,31 +493,23 @@ const savePresets = () => localStorage.setItem('mgPresets3', JSON.stringify(pres
 
 let st = {
   day: DAYS[todayIdx],
-  mains: [
-    { name: '酱香鸭腿紫米', img: null },
-    { name: '清炒有机花菜', img: null },
-  ],
+  mains: [{ name: '酱香鸭腿紫米', img: null }, { name: '清炒有机花菜', img: null }],
   sides: ['小青菜','蒸紫薯','水煮蛋','小番茄'],
   drink: '小米粥',
   watermark: true,
 };
 
-// ════════ INIT ════════
 function init() {
   renderDays(); renderMains(); renderSides(); renderDrink();
   buildWatermark(); syncCard();
 }
 
-// ════════ DAY ════════
 function renderDays() {
   document.getElementById('daySelector').innerHTML =
-    DAYS.map(d =>
-      `<button class="day-btn${d===st.day?' active':''}" onclick="pickDay('${d}')">${d}</button>`
-    ).join('');
+    DAYS.map(d => `<button class="day-btn${d===st.day?' active':''}" onclick="pickDay('${d}')">${d}</button>`).join('');
 }
 function pickDay(d) { st.day=d; renderDays(); syncCardTitle(); }
 
-// ════════ MAINS (text input only) ════════
 function renderMains() {
   document.getElementById('mainList').innerHTML = st.mains.map((m,i) => `
     <div>
@@ -562,23 +518,18 @@ function renderMains() {
           <input class="item-input" type="text" value="${escH(m.name)}"
             placeholder="输入主食名称" oninput="setMainName(${i},this.value)">
         </div>
-        ${st.mains.length > 1
-          ? `<button class="btn-icon" onclick="removeMain(${i})">×</button>` : ''}
+        ${st.mains.length > 1 ? `<button class="btn-icon" onclick="removeMain(${i})">×</button>` : ''}
       </div>
       <div class="image-block">
         <div class="image-upload-area${m.img?' has-image':''}" onclick="triggerImg(${i})">
           ${m.img
-            ? `<img class="img-thumb" src="${m.img}" alt="">
-               <span style="font-size:12px;color:var(--sage)">点击更换图片</span>
-               <button class="img-clear-btn"
-                 onclick="event.stopPropagation();clearImg(${i})">×</button>`
+            ? `<img class="img-thumb" src="${m.img}" alt=""><span style="font-size:12px;color:var(--sage)">点击更换图片</span>
+               <button class="img-clear-btn" onclick="event.stopPropagation();clearImg(${i})">×</button>`
             : `<span>📷 上传主食图片（可选）</span>`}
         </div>
-        <input type="file" accept="image/*" style="display:none"
-          id="fi${i}" onchange="loadImg(${i},this)">
+        <input type="file" accept="image/*" style="display:none" id="fi${i}" onchange="loadImg(${i},this)">
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
   document.getElementById('addMainBtn').disabled = st.mains.length >= 2;
 }
 function setMainName(i,v) { st.mains[i].name=v; syncCard(); }
@@ -588,29 +539,35 @@ function triggerImg(i) { document.getElementById('fi'+i).click(); }
 function clearImg(i) { st.mains[i].img=null; renderMains(); syncCard(); }
 function loadImg(i, input) {
   const f=input.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=e=>{ st.mains[i].img=e.target.result; renderMains(); syncCard(); };
-  r.readAsDataURL(f);
+  // Resize image before storing to avoid canvas memory issues on mobile
+  const img = new Image();
+  const url = URL.createObjectURL(f);
+  img.onload = () => {
+    const maxW = 900;
+    let w = img.width, h = img.height;
+    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    st.mains[i].img = c.toDataURL('image/jpeg', 0.88);
+    URL.revokeObjectURL(url);
+    renderMains(); syncCard();
+  };
+  img.src = url;
 }
 
-// ════════ SIDES ════════
 function renderSides() {
   document.getElementById('sideList').innerHTML = st.sides.map((s,i) => `
     <div class="item-row">
       <select class="preset-select" onchange="pickSidePreset(${i},this.value)">
         <option value="">预设</option>
-        ${presets['搭配'].map(p =>
-          `<option value="${escH(p)}"${p===s?' selected':''}>${escH(p)}</option>`
-        ).join('')}
+        ${presets['搭配'].map(p=>`<option value="${escH(p)}"${p===s?' selected':''}>${escH(p)}</option>`).join('')}
       </select>
       <div class="item-input-wrap">
-        <input class="item-input" type="text" value="${escH(s)}"
-          placeholder="搭配名称" oninput="setSide(${i},this.value)">
+        <input class="item-input" type="text" value="${escH(s)}" placeholder="搭配名称" oninput="setSide(${i},this.value)">
       </div>
-      ${st.sides.length > 2
-        ? `<button class="btn-icon" onclick="removeSide(${i})">×</button>` : ''}
-    </div>
-  `).join('');
+      ${st.sides.length > 2 ? `<button class="btn-icon" onclick="removeSide(${i})">×</button>` : ''}
+    </div>`).join('');
   document.getElementById('addSideBtn').disabled = st.sides.length >= 5;
 }
 function pickSidePreset(i,v) { if(v){ st.sides[i]=v; renderSides(); syncCard(); } }
@@ -618,77 +575,54 @@ function setSide(i,v) { st.sides[i]=v; syncCard(); }
 function addSide() { if(st.sides.length<5){ st.sides.push(''); renderSides(); syncCard(); } }
 function removeSide(i) { st.sides.splice(i,1); renderSides(); syncCard(); }
 
-// ════════ DRINK ════════
 function renderDrink() {
   document.getElementById('drinkList').innerHTML = `
     <div class="item-row">
       <select class="preset-select" onchange="pickDrinkPreset(this.value)">
         <option value="">预设</option>
-        ${presets['热饮'].map(p =>
-          `<option value="${escH(p)}"${p===st.drink?' selected':''}>${escH(p)}</option>`
-        ).join('')}
+        ${presets['热饮'].map(p=>`<option value="${escH(p)}"${p===st.drink?' selected':''}>${escH(p)}</option>`).join('')}
       </select>
       <div class="item-input-wrap">
-        <input class="item-input" type="text" value="${escH(st.drink)}"
-          placeholder="热饮名称" oninput="setDrink(this.value)">
+        <input class="item-input" type="text" value="${escH(st.drink)}" placeholder="热饮名称" oninput="setDrink(this.value)">
       </div>
     </div>`;
 }
 function pickDrinkPreset(v) { if(v){ st.drink=v; renderDrink(); syncCard(); } }
 function setDrink(v) { st.drink=v; syncCard(); }
 
-// ════════ WATERMARK — diagonal tiling ════════
 function buildWatermark() {
   const layer = document.getElementById('wmLayer');
   layer.innerHTML = '';
-  // Generous grid so it covers any card height
-  for (let col = -1; col <= 4; col++) {
-    for (let row = -1; row <= 12; row++) {
+  for (let col=-1; col<=4; col++) {
+    for (let row=-1; row<=12; row++) {
       const span = document.createElement('span');
       span.textContent = '玫小瑰';
-      span.style.left = (col * 138 - 20) + 'px';
-      span.style.top  = (row * 85  - 15) + 'px';
+      span.style.left = (col*138-20)+'px';
+      span.style.top  = (row*85-15)+'px';
       layer.appendChild(span);
     }
   }
 }
 function toggleWatermark() {
-  st.watermark = !st.watermark;
+  st.watermark=!st.watermark;
   document.getElementById('wmToggle').classList.toggle('on', st.watermark);
   document.getElementById('wmLayer').style.display = st.watermark ? '' : 'none';
 }
 
-// ════════ SYNC CARD ════════
 function syncCardTitle() {
-  document.getElementById('cardTitle').textContent = st.day + '营养搭配';
+  document.getElementById('cardTitle').textContent = st.day+'营养搭配';
 }
 function syncCard() {
   syncCardTitle();
-
-  // Mains — centred, image full width natural height
-  document.getElementById('cardMain').innerHTML = st.mains.map(m => `
+  document.getElementById('cardMain').innerHTML = st.mains.map(m=>`
     <div class="dish-name">${escH(m.name||'\u3000')}</div>
-    ${m.img ? `<img class="dish-img" src="${m.img}" alt="">` : ''}
-  `).join('');
-
-  // Sides
+    ${m.img?`<img class="dish-img" src="${m.img}" alt="">`:''}`).join('');
   document.getElementById('cardSides').innerHTML = st.sides
     .filter(s=>s.trim())
-    .map(s=>`<span class="side-item"><span class="side-dot"></span>${escH(s)}</span>`)
-    .join('');
-
-  // Drink
-  document.getElementById('cardDrink').textContent = st.drink || '\u3000';
-
-  // Update frame height to match card
-  requestAnimationFrame(() => {
-    const card = document.getElementById('card');
-    const frame = document.getElementById('cardFrame');
-    if (frame) frame.style.bottom = '12px'; // already using inset:12px via CSS
-  });
+    .map(s=>`<span class="side-item"><span class="side-dot"></span>${escH(s)}</span>`).join('');
+  document.getElementById('cardDrink').textContent = st.drink||'\u3000';
 }
 
-// ════════ MODAL ════════
 function openModal() { renderModal(); document.getElementById('modalOverlay').classList.remove('hidden'); }
 function closeModal() {
   document.getElementById('modalOverlay').classList.add('hidden');
@@ -696,12 +630,12 @@ function closeModal() {
 }
 function outsideClose(e) { if(e.target===document.getElementById('modalOverlay')) closeModal(); }
 function renderModal() {
-  document.getElementById('modalBody').innerHTML = ['搭配','热饮'].map(cat => `
+  document.getElementById('modalBody').innerHTML = ['搭配','热饮'].map(cat=>`
     <div class="modal-cat">
       <div class="modal-cat-label">${cat}</div>
       <div class="tag-list" id="tags_${cat}">
-        ${presets[cat].map((p,i) =>
-          `<span class="ptag">${escH(p)}
+        ${presets[cat].map((p,i)=>`
+          <span class="ptag">${escH(p)}
             <button class="ptag-x" onclick="rmPreset('${cat}',${i})">×</button>
           </span>`).join('')}
       </div>
@@ -710,44 +644,71 @@ function renderModal() {
           onkeydown="if(event.key==='Enter')addPreset('${cat}')">
         <button class="preset-add-btn" onclick="addPreset('${cat}')">添加</button>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 function addPreset(cat) {
   const el=document.getElementById('pi_'+cat);
   const v=el.value.trim();
-  if(v && !presets[cat].includes(v)){ presets[cat].push(v); savePresets(); renderModal(); el.value=''; }
+  if(v&&!presets[cat].includes(v)){ presets[cat].push(v); savePresets(); renderModal(); el.value=''; }
 }
 function rmPreset(cat,i) { presets[cat].splice(i,1); savePresets(); renderModal(); }
 
-// ════════ EXPORT ════════
+// ── EXPORT: mobile-safe ──────────────────────────────────
 async function exportCard() {
-  const btn=document.getElementById('exportBtn');
-  btn.textContent='生成中…'; btn.disabled=true;
-  await document.fonts.ready;
+  const btn = document.getElementById('exportBtn');
+  btn.textContent = '生成中…'; btn.disabled = true;
+
+  // Wait for fonts (with timeout so it doesn't hang if fonts fail)
+  await Promise.race([
+    document.fonts.ready,
+    new Promise(r => setTimeout(r, 2000))
+  ]);
+
   try {
-    const card=document.getElementById('card');
-    const canvas=await html2canvas(card,{
-      scale:2.5, useCORS:true, allowTaint:true,
-      backgroundColor:null, logging:false,
+    const card = document.getElementById('card');
+    // Lower scale on mobile to avoid canvas memory limit
+    const isMobile = window.innerWidth < 960 || /Mobi|Android/i.test(navigator.userAgent);
+    const scale = isMobile ? 1.8 : 2.5;
+
+    const canvas = await html2canvas(card, {
+      scale,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#f8f4eb',
+      logging: false,
+      imageTimeout: 8000,
+      onclone: (doc) => {
+        // Ensure watermark visibility in clone
+        const wm = doc.getElementById('wmLayer');
+        if (wm) wm.style.display = st.watermark ? '' : 'none';
+      }
     });
-    const a=document.createElement('a');
-    const d=new Date();
-    a.download=`${st.day}营养搭配_${d.getMonth()+1}月${d.getDate()}日.png`;
-    a.href=canvas.toDataURL('image/png');
-    a.click();
+
+    const d = new Date();
+    const filename = `${st.day}营养搭配_${d.getMonth()+1}月${d.getDate()}日.png`;
+
+    // Try standard download first; fall back to opening in new tab (iOS)
+    try {
+      const a = document.createElement('a');
+      a.download = filename;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    } catch {
+      // iOS Safari fallback: open image in new tab for long-press save
+      const win = window.open();
+      win.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%"><p style="font-family:sans-serif;color:#666;text-align:center">长按图片 → 存储到相册</p>`);
+    }
+
   } catch(e) {
-    alert('导出遇到问题，请刷新后重试。');
     console.error(e);
+    alert('导出失败：' + (e.message || '未知错误') + '\n\n请尝试：截图保存，或换用电脑浏览器导出。');
   }
-  btn.textContent='📥 导出菜单图片'; btn.disabled=false;
+
+  btn.textContent = '📥 导出菜单图片'; btn.disabled = false;
 }
 
-// ════════ UTIL ════════
 function escH(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 init();
