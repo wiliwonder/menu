@@ -541,58 +541,24 @@ function loadImg(i, input) {
   const f = input.files[0];
   if (!f) return;
 
-  const img = new Image();
-  const url = URL.createObjectURL(f);
+  const reader = new FileReader();
 
-  img.onload = () => {
-    let w = img.naturalWidth;
-    let h = img.naturalHeight;
-
-    if (!w || !h) {
-      alert('图片解析失败，请换一张图片');
-      URL.revokeObjectURL(url);
-      return;
-    }
-
-    const maxW = 900;
-    if (w > maxW) {
-      h = Math.round(h * maxW / w);
-      w = maxW;
-    }
-
-    if (!w || !h) {
-      alert('图片尺寸异常');
-      return;
-    }
-
-    const c = document.createElement('canvas');
-    c.width = w;
-    c.height = h;
-
-    const ctx = c.getContext('2d');
-    ctx.drawImage(img, 0, 0, w, h);
-
-    const dataUrl = c.toDataURL('image/jpeg', 0.88);
-
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
     if (!dataUrl || dataUrl.length < 100) {
-      alert('图片转换失败，请重试');
-      URL.revokeObjectURL(url);
+      alert('图片读取失败，请重试');
       return;
     }
-
     st.mains[i].img = dataUrl;
-
-    URL.revokeObjectURL(url);
     renderMains();
     syncCard();
   };
 
-  img.onerror = () => {
-    alert('图片加载失败');
-    URL.revokeObjectURL(url);
+  reader.onerror = () => {
+    alert('图片读取失败');
   };
 
-  img.src = url;
+  reader.readAsDataURL(f);
 }
 
 function renderSides() {
@@ -692,7 +658,6 @@ function addPreset(cat) {
 }
 function rmPreset(cat,i) { presets[cat].splice(i,1); savePresets(); renderModal(); }
 
-// ── EXPORT: mobile-safe ──────────────────────────────────
 async function exportCard() {
   const btn = document.getElementById('exportBtn');
   btn.textContent = '生成中…';
@@ -707,38 +672,13 @@ async function exportCard() {
     const card = document.getElementById('card');
 
     const imgs = card.querySelectorAll('img');
-    const validImgs = [...imgs].filter(img => img.src && img.src.length > 10);
 
-    await Promise.all(validImgs.map(img => {
+    await Promise.all([...imgs].filter(img => img.src).map(img => {
       return new Promise(res => {
-        const checkAndResolve = () => {
-          if (img.complete) {
-            if (img.naturalWidth > 0) {
-              res();
-            } else {
-              img.remove();
-              res();
-            }
-          }
-        };
-
-        if (img.complete) {
-          checkAndResolve();
-          return;
-        }
-
-        img.onload = () => res();
-        img.onerror = () => {
-          img.remove();
-          res();
-        };
-
-        setTimeout(() => {
-          if (img.naturalWidth === 0) {
-            img.remove();
-          }
-          res();
-        }, 3000);
+        if (img.complete) return res();
+        img.onload = res;
+        img.onerror = res;
+        setTimeout(res, 2000);
       });
     }));
 
@@ -754,25 +694,12 @@ async function exportCard() {
       scale,
       width: cardW,
       height: cardH,
-      windowWidth: document.documentElement.clientWidth,
-      windowHeight: document.documentElement.clientHeight,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#f8f4eb',
       logging: false,
-      imageTimeout: 10000,
-      foreignObjectRendering: false,
+      imageTimeout: 8000,
       onclone: (doc) => {
-        const imgs = doc.querySelectorAll('img');
-        imgs.forEach(img => {
-          const hasValidSrc = img.src && img.src.length > 10 && !img.src.startsWith('data:,');
-          const hasValidSize = img.naturalWidth > 0 && img.naturalHeight > 0;
-
-          if (!hasValidSrc || !hasValidSize) {
-            img.remove();
-          }
-        });
-
         const wm = doc.getElementById('wmLayer');
         if (wm) wm.style.display = st.watermark ? '' : 'none';
       }
