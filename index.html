@@ -654,49 +654,83 @@ function rmPreset(cat,i) { presets[cat].splice(i,1); savePresets(); renderModal(
 
 // ── EXPORT: mobile-safe ──────────────────────────────────
 async function exportCard() {
-  const btn = document.getElementById('exportBtn');
+  var btn = document.getElementById('exportBtn');
   btn.textContent = '生成中…'; btn.disabled = true;
 
-  await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2000))]);
+  await Promise.race([document.fonts.ready, new Promise(function(r){ setTimeout(r, 2000); })]);
 
   try {
-    const card = document.getElementById('card');
-    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    const scale = isMobile ? 1.8 : 2.5;
-    const rect = card.getBoundingClientRect();
+    var card = document.getElementById('card');
+    var isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    var scale = isMobile ? 1.8 : 2.5;
+    var rect = card.getBoundingClientRect();
 
-    const dataUrl = await domtoimage.toPng(card, {
+    var dataUrl = await domtoimage.toPng(card, {
       width:  rect.width  * scale,
       height: rect.height * scale,
       style: {
-        transform: `scale(${scale})`,
+        transform: 'scale(' + scale + ')',
         transformOrigin: 'top left',
       },
       bgcolor: '#f8f4eb',
       cacheBust: true,
     });
 
-    const d = new Date();
-    const filename = `${st.day}营养搭配_${d.getMonth()+1}月${d.getDate()}日.png`;
-
-    try {
-      const a = document.createElement('a');
-      a.download = filename;
-      a.href = dataUrl;
-      a.click();
-    } catch {
-      // iOS Safari fallback
-      const win = window.open();
-      win.document.write(`<img src="${dataUrl}" style="max-width:100%">
-        <p style="font-family:sans-serif;color:#666;text-align:center;padding:12px">长按图片 → 存储到相册</p>`);
-    }
+    // Universal: show image overlay, long-press to save
+    // Works in WeChat, QQ, Quark, Safari, Chrome — everything
+    showImageOverlay(dataUrl);
 
   } catch(e) {
-    console.error(e);
+    console.error('导出错误:', e);
     alert('导出失败：' + (e.message || '未知错误'));
   }
 
   btn.textContent = '📥 导出菜单图片'; btn.disabled = false;
+}
+
+function showImageOverlay(dataUrl) {
+  // Remove existing overlay if any
+  var old = document.getElementById('imgOverlay');
+  if (old) old.parentNode.removeChild(old);
+
+  var overlay = document.createElement('div');
+  overlay.id = 'imgOverlay';
+  overlay.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:9999',
+    'background:rgba(0,0,0,0.88)',
+    'display:flex', 'flex-direction:column',
+    'align-items:center', 'justify-content:center',
+    'padding:20px', 'gap:14px'
+  ].join(';');
+
+  var tip = document.createElement('p');
+  tip.textContent = '长按图片 → 保存到相册';
+  tip.style.cssText = 'color:#fff;font-size:15px;font-family:sans-serif;opacity:0.85;margin:0';
+
+  var img = document.createElement('img');
+  img.src = dataUrl;
+  img.style.cssText = [
+    'max-width:100%', 'max-height:75vh',
+    'border-radius:4px',
+    'box-shadow:0 4px 32px rgba(0,0,0,0.5)'
+  ].join(';');
+
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent = '关 闭';
+  closeBtn.style.cssText = [
+    'padding:10px 32px',
+    'background:rgba(255,255,255,0.15)',
+    'border:1px solid rgba(255,255,255,0.3)',
+    'border-radius:20px', 'color:#fff',
+    'font-size:14px', 'cursor:pointer',
+    'font-family:sans-serif'
+  ].join(';');
+  closeBtn.onclick = function() { overlay.parentNode.removeChild(overlay); };
+
+  overlay.appendChild(tip);
+  overlay.appendChild(img);
+  overlay.appendChild(closeBtn);
+  document.body.appendChild(overlay);
 }
 
 function escH(s) {
