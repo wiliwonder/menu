@@ -572,7 +572,15 @@ function loadImg(i, input) {
     const ctx = c.getContext('2d');
     ctx.drawImage(img, 0, 0, w, h);
 
-    st.mains[i].img = c.toDataURL('image/jpeg', 0.88);
+    const dataUrl = c.toDataURL('image/jpeg', 0.88);
+
+    if (!dataUrl || dataUrl.length < 100) {
+      alert('图片转换失败，请重试');
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    st.mains[i].img = dataUrl;
 
     URL.revokeObjectURL(url);
     renderMains();
@@ -647,7 +655,7 @@ function syncCard() {
   syncCardTitle();
   document.getElementById('cardMain').innerHTML = st.mains.map(m=>`
     <div class="dish-name">${escH(m.name||'\u3000')}</div>
-    ${m.img?`<img class="dish-img" src="${m.img}" alt="">`:''}`).join('');
+    ${(m.img && m.img.length > 10)?`<img class="dish-img" src="${m.img}" alt="">`:''}`).join('');
   document.getElementById('cardSides').innerHTML = st.sides
     .filter(s=>s.trim())
     .map(s=>`<span class="side-item"><span class="side-dot"></span>${escH(s)}</span>`).join('');
@@ -699,15 +707,38 @@ async function exportCard() {
     const card = document.getElementById('card');
 
     const imgs = card.querySelectorAll('img');
-    await Promise.all([...imgs].map(img => {
+    const validImgs = [...imgs].filter(img => img.src && img.src.length > 10);
+
+    await Promise.all(validImgs.map(img => {
       return new Promise(res => {
-        if (img.complete && img.naturalWidth > 0) return res();
+        const checkAndResolve = () => {
+          if (img.complete) {
+            if (img.naturalWidth > 0) {
+              res();
+            } else {
+              img.remove();
+              res();
+            }
+          }
+        };
+
+        if (img.complete) {
+          checkAndResolve();
+          return;
+        }
 
         img.onload = () => res();
         img.onerror = () => {
           img.remove();
           res();
         };
+
+        setTimeout(() => {
+          if (img.naturalWidth === 0) {
+            img.remove();
+          }
+          res();
+        }, 3000);
       });
     }));
 
@@ -734,7 +765,10 @@ async function exportCard() {
       onclone: (doc) => {
         const imgs = doc.querySelectorAll('img');
         imgs.forEach(img => {
-          if (!img.src || img.naturalWidth === 0) {
+          const hasValidSrc = img.src && img.src.length > 10 && !img.src.startsWith('data:,');
+          const hasValidSize = img.naturalWidth > 0 && img.naturalHeight > 0;
+
+          if (!hasValidSrc || !hasValidSize) {
             img.remove();
           }
         });
