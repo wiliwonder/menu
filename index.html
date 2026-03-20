@@ -194,10 +194,7 @@ body {
 }
 .card-bg {
   position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 70% 50% at 15% 8%,  rgba(159,202,169,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 45% at 88% 92%, rgba(159,202,169,0.14) 0%, transparent 55%),
-    linear-gradient(165deg, #f9f6ef 0%, #f3efe3 100%);
+  background: linear-gradient(165deg, #f9f6ef 0%, #f3efe3 100%);
   pointer-events: none;
 }
 .card-frame {
@@ -406,7 +403,7 @@ body {
       <div class="card-bg"></div>
       <div class="card-frame"></div>
       <div class="card-wm-layer" id="wmLayer"></div>
-      <svg class="botanical-tl" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg class="botanical-tl" width="170" height="160" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8,152 Q42,95 100,28" stroke="#4a7c59" stroke-width="1.4" fill="none" stroke-linecap="round"/>
         <path d="M22,138 Q52,95 82,55" stroke="#6fa87d" stroke-width="0.9" fill="none" stroke-linecap="round"/>
         <ellipse cx="96" cy="34" rx="14" ry="7.5" fill="#9fcaa9" transform="rotate(-45 96 34)"/>
@@ -419,7 +416,7 @@ body {
         <circle cx="86" cy="44" r="2.2" fill="#9fcaa9" opacity="0.6"/>
         <circle cx="10" cy="148" r="2" fill="#9fcaa9" opacity="0.5"/>
       </svg>
-      <svg class="botanical-br" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg class="botanical-br" width="155" height="148" viewBox="0 0 170 160" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8,152 Q42,95 100,28" stroke="#4a7c59" stroke-width="1.4" fill="none" stroke-linecap="round"/>
         <path d="M22,138 Q52,95 82,55" stroke="#6fa87d" stroke-width="0.9" fill="none" stroke-linecap="round"/>
         <ellipse cx="96" cy="34" rx="14" ry="7.5" fill="#9fcaa9" transform="rotate(-45 96 34)"/>
@@ -712,10 +709,20 @@ async function exportCard() {
       backgroundColor: '#f8f4eb',
       logging: true,
       imageTimeout: 8000,
+      removeContainer: true,
       onclone: (doc) => {
         console.log('9. onclone triggered');
+
         const wm = doc.getElementById('wmLayer');
         if (wm) wm.style.display = st.watermark ? '' : 'none';
+
+        const svgs = doc.querySelectorAll('svg');
+        svgs.forEach(svg => {
+          if (!svg.getAttribute('width') || !svg.getAttribute('height')) {
+            svg.setAttribute('width', '100');
+            svg.setAttribute('height', '100');
+          }
+        });
       }
     });
 
