@@ -666,19 +666,25 @@ async function exportCard() {
 
   try {
     const card = document.getElementById('card');
-    // Lower scale on mobile to avoid canvas memory limit
     const isMobile = window.innerWidth < 960 || /Mobi|Android/i.test(navigator.userAgent);
     const scale = isMobile ? 1.8 : 2.5;
 
+    // Measure actual rendered size — fixes "canvas width/height 0" on mobile
+    const rect = card.getBoundingClientRect();
+    const cardW = Math.round(rect.width);
+    const cardH = Math.round(rect.height);
+    if (!cardW || !cardH) throw new Error('卡片尺寸为0，请滚动到卡片可见区域后再导出');
+
     const canvas = await html2canvas(card, {
       scale,
+      width: cardW,
+      height: cardH,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#f8f4eb',
       logging: false,
       imageTimeout: 8000,
       onclone: (doc) => {
-        // Ensure watermark visibility in clone
         const wm = doc.getElementById('wmLayer');
         if (wm) wm.style.display = st.watermark ? '' : 'none';
       }
