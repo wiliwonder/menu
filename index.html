@@ -735,47 +735,77 @@ async function exportCard() {
 
     console.log('所有图片已加载完成');
 
-    const isMobile = window.innerWidth < 960 || /Mobi|Android/i.test(navigator.userAgent);
-    const scale = isMobile ? 1.8 : 2.5;
+    const cardBg = document.querySelector('.card-bg');
+    const oldBg = cardBg ? cardBg.style.background : '';
 
-    console.log('开始 html2canvas，尺寸:', cardW, 'x', cardH, '缩放:', scale);
-
-    const canvas = await html2canvas(card, {
-      scale,
-      width: cardW,
-      height: cardH,
-      useCORS: false,
-      allowTaint: true,
-      backgroundColor: '#f8f4eb',
-      logging: false,
-      imageTimeout: 8000,
-      onclone: (clonedDoc) => {
-        console.log('克隆文档完成');
-
-        const wm = clonedDoc.getElementById('wmLayer');
-        if (wm) wm.style.display = st.watermark ? '' : 'none';
-
-        const clonedCard = clonedDoc.getElementById('card');
-        if (clonedCard) {
-          clonedCard.style.background = 'none';
-        }
-
-        const cardBg = clonedDoc.querySelector('.card-bg');
-        if (cardBg) {
-          cardBg.style.background = 'none';
-        }
-
-        const svgs = clonedDoc.querySelectorAll('svg');
-        svgs.forEach(svg => {
-          if (!svg.getAttribute('width') || svg.getAttribute('width') === '0') {
-            svg.setAttribute('width', '100');
-          }
-          if (!svg.getAttribute('height') || svg.getAttribute('height') === '0') {
-            svg.setAttribute('height', '100');
-          }
-        });
+    try {
+      if (cardBg) {
+        cardBg.style.background = 'none';
+        console.log('临时移除背景渐变，测试是否兼容问题');
       }
-    });
+
+      const isMobile = window.innerWidth < 960 || /Mobi|Android/i.test(navigator.userAgent);
+      const scale = isMobile ? 1.8 : 2.5;
+
+      console.log('开始 html2canvas，尺寸:', cardW, 'x', cardH, '缩放:', scale);
+
+      const canvas = await html2canvas(card, {
+        scale,
+        width: cardW,
+        height: cardH,
+        useCORS: false,
+        allowTaint: true,
+        backgroundColor: '#f8f4eb',
+        logging: false,
+        imageTimeout: 8000,
+        onclone: (clonedDoc) => {
+          console.log('克隆文档完成');
+
+          const wm = clonedDoc.getElementById('wmLayer');
+          if (wm) wm.style.display = st.watermark ? '' : 'none';
+
+          const clonedCardBg = clonedDoc.querySelector('.card-bg');
+          if (clonedCardBg) {
+            clonedCardBg.style.background = 'none';
+          }
+
+          const svgs = clonedDoc.querySelectorAll('svg');
+          svgs.forEach(svg => {
+            if (!svg.getAttribute('width') || svg.getAttribute('width') === '0') {
+              svg.setAttribute('width', '100');
+            }
+            if (!svg.getAttribute('height') || svg.getAttribute('height') === '0') {
+              svg.setAttribute('height', '100');
+            }
+          });
+        }
+      });
+
+      console.log('Canvas 创建完成:', canvas.width, 'x', canvas.height);
+
+      const d = new Date();
+      const filename = `${st.day}营养搭配_${d.getMonth()+1}月${d.getDate()}日.png`;
+
+      try {
+        const a = document.createElement('a');
+        a.download = filename;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+      } catch {
+        const win = window.open();
+        if (win) {
+          win.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%"><p style="font-family:sans-serif;color:#666;text-align:center">长按图片 → 存储到相册</p>`);
+        } else {
+          alert('无法打开新窗口，请检查浏览器弹窗设置');
+        }
+      }
+
+    } finally {
+      if (cardBg) {
+        cardBg.style.background = oldBg;
+        console.log('恢复背景渐变');
+      }
+    }
 
     console.log('Canvas 创建完成:', canvas.width, 'x', canvas.height);
 
